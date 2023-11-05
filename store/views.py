@@ -12,14 +12,14 @@ from rest_framework.mixins import ListModelMixin, CreateModelMixin, RetrieveMode
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet, GenericViewSet
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.decorators import action    
-from rest_framework.permissions import IsAuthenticated, AllowAny,IsAdminUser,DjangoModelPermissions,DjangoModelPermissionsOrAnonReadOnly
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser, DjangoModelPermissions, DjangoModelPermissionsOrAnonReadOnly
 
 from store.permissions import FullDjangoModelPermissions, IsAdminOrReadOnly, ViewCustomerHistoryPermission
 
 # . means current folder
-from .models import Cart, CartItem, Customer, OrderItem, Product, Collection, Review
-from .serializers import AddCartItemSerializer, CartItemSerializer, CartSerializer, CustomerSerializer,  ProductSerializer, CollectionSerializer, ReviewSerializer, UpdateCartItemSerializer
+from .models import Cart, CartItem, Customer, Order, OrderItem, Product, Collection, Review
+from .serializers import AddCartItemSerializer, CartItemSerializer, CartSerializer, CreateOrderSerializer, CustomerSerializer, OrderSerializer,  ProductSerializer, CollectionSerializer, ReviewSerializer, UpdateCartItemSerializer, UpdateOrderSerializer
 from store.filters import ProductFilter
 from store.pagination import DefaultPagination
 
@@ -112,7 +112,7 @@ class CustomerViewSet(ModelViewSet):
 
     # def get_permissions(self):
     #     if self.request.method == 'GET':
-    #         # Here we should return list of objects not classes 
+    #         # Here we should return list of objects not classes
     #         return [AllowAny()]
     #     return [IsAuthenticated()]
 
@@ -120,20 +120,57 @@ class CustomerViewSet(ModelViewSet):
     # detail=False → means this action available in list view
     # detail=True → means this action available in detail view
     # @action(detail=False,methods=['GET','PUT'],permission_classes=[IsAuthenticated])
-    @action(detail=False,methods=['GET','PUT'],permission_classes=[IsAuthenticated])
-    def me(self,request):
-        (customer,created) =  Customer.objects.get_or_create(user_id = request.user.id)
+    @action(detail=False, methods=['GET', 'PUT'], permission_classes=[IsAuthenticated])
+    def me(self, request):
+        customer = Customer.objects.get(
+            user_id=request.user.id)
         # if there is information about a user in request it will get the user from the databse
         # then will attach it to the request, it came from authentication middleware
         if request.method == 'GET':
             serializer = CustomerSerializer(customer)
             return Response(serializer.data)
         elif request.method == 'PUT':
-            serializer = CustomerSerializer(customer, data=request.data )
+            serializer = CustomerSerializer(customer, data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data)
-    
-    @action(detail=True,permission_classes=[ViewCustomerHistoryPermission])
-    def history(self,request,pk):
+
+    @action(detail=True, permission_classes=[ViewCustomerHistoryPermission])
+    def history(self, request, pk):
         return Response('OK')
+
+
+class OrderViewSet(ModelViewSet):
+    http_method_names = ['get', 'head', 'options', 'post', 'patch', 'delete']
+    # permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.request.method in ['PATCH', 'DELETE']:
+            return [IsAdminUser()]
+        return [IsAuthenticated()]
+
+    def create(self, request, *args, **kwargs):
+        serializer = CreateOrderSerializer(
+            context={'user_id': self.request.user.id}, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        order = serializer.save()
+        serializer = OrderSerializer(order)
+        return Response(serializer.data)
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return CreateOrderSerializer
+        elif self.request.method == 'PATCH':
+            return UpdateOrderSerializer
+        return OrderSerializer
+
+    # def get_serializer_context(self):
+    #     return {'user_id': self.request.user.id}
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            return Order.objects.all()
+        customer_id = Customer.objects.only(
+            'id').get(user_id=user.id)
+        return Order.objects.filter(customer_id=customer_id)
