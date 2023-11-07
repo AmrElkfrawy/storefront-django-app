@@ -53,10 +53,7 @@ class Customer(models.Model):
         (MEMBERSHIP_SILVER, 'Silver'),
         (MEMBERSHIP_GOLD, 'Gold'),
     ]
-    # they exist in user model
-    # first_name = models.CharField(max_length=255)
-    # last_name = models.CharField(max_length=255)
-    # email = models.EmailField(unique=True)
+
     phone = models.CharField(max_length=255)
     birth_date = models.DateField(null=True, blank=True)
     membership = models.CharField(
@@ -120,7 +117,6 @@ class Address(models.Model):
 
 
 class Cart(models.Model):
-    # if we pass uuid4() as a function, because if we call a function when make migration a guid will be generated and hardcoded in migration file
     id = models.UUIDField(primary_key=True, default=uuid4)
     created_at = models.DateTimeField(auto_now_add=True)
 
