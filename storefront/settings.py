@@ -16,6 +16,9 @@ from pathlib import Path
 from dotenv import load_dotenv
 import pymysql
 
+import warnings
+warnings.filterwarnings(action="ignore")
+
 load_dotenv()
 
 pymysql.version_info = (1, 4, 6, 'final', 0)
