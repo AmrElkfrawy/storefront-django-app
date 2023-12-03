@@ -28,6 +28,11 @@ class Website(HttpUser):
             )
 
 
+    @task
+    def say_hello(self):
+        print('Testing cache')
+        self.client.get('/playground/hello/',name='/playground/hello/')
+
     def on_start(self):
         response = self.client.post('/store/carts/')
         result = response.json()
