@@ -1,0 +1,35 @@
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  margin: 0;
+  background-color: turquoise;
+  color: white;
+  font-family: "Arial", sans-serif;
+}
+
+.container {
+  text-align: center;
+}
+
+.store-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.store-title {
+  font-size: 3em;
+  font-weight: bold;
+  margin-right: 5px;
+}
+
+.cart-icon {
+  font-size: 3em;
+}
+
+.slogan {
+  margin-top: 5px;
+  font-size: 1.2em;
+}

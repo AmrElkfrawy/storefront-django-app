@@ -139,3 +139,5 @@ GitHub.sublime-settings
 
 commands.py
 save
+/static/
+settings_new/
