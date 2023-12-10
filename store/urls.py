@@ -1,13 +1,8 @@
-from django.urls import include, path
-
-from rest_framework.routers import SimpleRouter, DefaultRouter
 from rest_framework_nested import routers
 
-from pprint import pprint
 from . import views
 
 
-# after nested routers
 router = routers.DefaultRouter()
 router.register('products', views.ProductViewSet, basename='products')
 router.register('collections', views.CollectionViewSet)

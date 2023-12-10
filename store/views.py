@@ -1,39 +1,30 @@
-# from django.shortcuts import render, get_object_or_404
-# from django.http import HttpResponse
 from django.db.models.aggregates import Count
 from django_filters.rest_framework import DjangoFilterBackend
 
-# from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-# from rest_framework.views import APIView
-from rest_framework.mixins import ListModelMixin, CreateModelMixin, RetrieveModelMixin, DestroyModelMixin, UpdateModelMixin
-# from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
-from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet, GenericViewSet
+from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, DestroyModelMixin
+from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser, DjangoModelPermissions, DjangoModelPermissionsOrAnonReadOnly
+from rest_framework.permissions import IsAuthenticated,  IsAdminUser
 
-from store.permissions import FullDjangoModelPermissions, IsAdminOrReadOnly, ViewCustomerHistoryPermission
-
-# . means current folder
 from .models import Cart, CartItem, Customer, Order, OrderItem, Product, Collection, ProductImage, Review
 from .serializers import AddCartItemSerializer, CartItemSerializer, CartSerializer, CreateOrderSerializer, CustomerSerializer, OrderSerializer, ProductImageSerializer,  ProductSerializer, CollectionSerializer, ReviewSerializer, UpdateCartItemSerializer, UpdateOrderSerializer
 from store.filters import ProductFilter
 from store.pagination import DefaultPagination
+from store.permissions import  IsAdminOrReadOnly, ViewCustomerHistoryPermission
 
 # Create your views here.
 
 
-class ProductViewSet(ModelViewSet):  # combines previous
-    # queryset = Product.objects.all()
+class ProductViewSet(ModelViewSet):
     serializer_class = ProductSerializer
 
     queryset = Product.objects.prefetch_related('images').all()
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
 
-    # filterset_fields = ['collection_id', 'unit_price']
     filterset_class = ProductFilter
     search_fields = ['title', 'description', 'collection__title']
     ordering_fields = ['unit_price', 'last_update']
@@ -53,7 +44,7 @@ class ProductViewSet(ModelViewSet):  # combines previous
         return super().destroy(request, *args, **kwargs)
 
 
-class CollectionViewSet(ModelViewSet):  # ReadOnlyModelViewSet
+class CollectionViewSet(ModelViewSet):
     queryset = Collection.objects.annotate(
         products_count=Count('products')).all()
     serializer_class = CollectionSerializer
@@ -67,9 +58,7 @@ class CollectionViewSet(ModelViewSet):  # ReadOnlyModelViewSet
 
 
 class ReviewViewSet(ModelViewSet):
-    # queryset = Review.objects.all()
     serializer_class = ReviewSerializer
-    # we use context to provide additional data to serializer
 
     def get_queryset(self):
         return Review.objects.filter(product_id=self.kwargs['product_pk'])
@@ -105,27 +94,10 @@ class CustomerViewSet(ModelViewSet):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
     permission_classes = [IsAdminUser]
-    # we created it in admin panel
-    # permission_classes = [DjangoModelPermissions]
-    # permission_classes = [FullDjangoModelPermissions]
-    # permission_classes = [DjangoModelPermissionsOrAnonReadOnly]
-
-    # def get_permissions(self):
-    #     if self.request.method == 'GET':
-    #         # Here we should return list of objects not classes
-    #         return [AllowAny()]
-    #     return [IsAuthenticated()]
-
-    # action: listening to requests
-    # detail=False → means this action available in list view
-    # detail=True → means this action available in detail view
-    # @action(detail=False,methods=['GET','PUT'],permission_classes=[IsAuthenticated])
     @action(detail=False, methods=['GET', 'PUT'], permission_classes=[IsAuthenticated])
     def me(self, request):
         customer = Customer.objects.get(
             user_id=request.user.id)
-        # if there is information about a user in request it will get the user from the databse
-        # then will attach it to the request, it came from authentication middleware
         if request.method == 'GET':
             serializer = CustomerSerializer(customer)
             return Response(serializer.data)
@@ -142,7 +114,6 @@ class CustomerViewSet(ModelViewSet):
 
 class OrderViewSet(ModelViewSet):
     http_method_names = ['get', 'head', 'options', 'post', 'patch', 'delete']
-    # permission_classes = [IsAuthenticated]
 
     def get_permissions(self):
         if self.request.method in ['PATCH', 'DELETE']:
@@ -163,9 +134,6 @@ class OrderViewSet(ModelViewSet):
         elif self.request.method == 'PATCH':
             return UpdateOrderSerializer
         return OrderSerializer
-
-    # def get_serializer_context(self):
-    #     return {'user_id': self.request.user.id}
 
     def get_queryset(self):
         user = self.request.user

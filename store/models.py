@@ -1,7 +1,7 @@
-from django.conf import settings
-from django.core.validators import MinValueValidator, FileExtensionValidator
-from django.db import models
 from django.contrib import admin
+from django.conf import settings
+from django.core.validators import MinValueValidator
+from django.db import models
 from uuid import uuid4
 
 from store.validators import validate_file_size
@@ -46,12 +46,11 @@ class Product(models.Model):
 
 
 class ProductImage(models.Model):
-    # image = models.FileField(upload_to='store/images',
-    #                          validators=[FileExtensionValidator(allowed_extensions=['pdf'])])
-    image = models.ImageField(upload_to='store/images',
-                              validators=[validate_file_size])
     product = models.ForeignKey(
         Product, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(
+        upload_to='store/images',
+        validators=[validate_file_size])
 
 
 class Customer(models.Model):
@@ -64,13 +63,10 @@ class Customer(models.Model):
         (MEMBERSHIP_SILVER, 'Silver'),
         (MEMBERSHIP_GOLD, 'Gold'),
     ]
-
     phone = models.CharField(max_length=255)
     birth_date = models.DateField(null=True, blank=True)
     membership = models.CharField(
         max_length=1, choices=MEMBERSHIP_CHOICES, default=MEMBERSHIP_BRONZE)
-
-    # by default it's set to user model by django
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
@@ -108,7 +104,9 @@ class Order(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT)
 
     class Meta:
-        permissions = [('cancel_order', 'Can cancel order')]
+        permissions = [
+            ('cancel_order', 'Can cancel order')
+        ]
 
 
 class OrderItem(models.Model):
@@ -137,7 +135,8 @@ class CartItem(models.Model):
         Cart, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.PositiveSmallIntegerField(
-        validators=[MinValueValidator(1)])
+        validators=[MinValueValidator(1)]
+    )
 
     class Meta:
         unique_together = [['cart', 'product']]
